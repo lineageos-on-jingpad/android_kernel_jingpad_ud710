@@ -63,7 +63,7 @@ static int bc_set_next(ktime_t expires, struct clock_event_device *bc)
 	 * invocation has to be wrapped with RCU_NONIDLE() as
 	 * hrtimer_start() can call into tracing.
 	 */
-	RCU_NONIDLE({
+	RCU_NONIDLE( {
 		hrtimer_start(&bctimer, expires, HRTIMER_MODE_ABS_PINNED);
 		/*
 		 * The core tick broadcast mode expects bc->bound_on to be set
@@ -76,7 +76,7 @@ static int bc_set_next(ktime_t expires, struct clock_event_device *bc)
 		 * base lock.
 		 */
 		bc->bound_on = bctimer.base->cpu_base->cpu;
-	});
+	} );
 	return 0;
 }
 

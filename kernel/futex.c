@@ -2922,6 +2922,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
 			 ktime_t *time, int trylock)
 {
 	struct hrtimer_sleeper timeout, *to = NULL;
+	struct futex_pi_state *pi_state = NULL;
 	struct task_struct *exiting = NULL;
 	struct rt_mutex_waiter rt_waiter;
 	struct futex_hash_bucket *hb;
@@ -3064,8 +3065,22 @@ no_block:
 	if (res)
 		ret = (res < 0) ? res : 0;
 
+	/*
+	 * If fixup_owner() faulted and was unable to handle the fault, unlock
+	 * it and return the fault to userspace.
+	 */
+	if (ret && (rt_mutex_owner(&q.pi_state->pi_mutex) == current)) {
+		pi_state = q.pi_state;
+		get_pi_state(pi_state);
+	}
+
 	/* Unqueue and drop the lock */
 	unqueue_me_pi(&q);
+
+	if (pi_state) {
+		rt_mutex_futex_unlock(&pi_state->pi_mutex);
+		put_pi_state(pi_state);
+	}
 
 	goto out_put_key;
 

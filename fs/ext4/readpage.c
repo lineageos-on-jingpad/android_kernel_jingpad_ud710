@@ -103,7 +103,6 @@ static void decrypt_work(struct work_struct *work)
 	bio_post_read_processing(ctx);
 }
 
-#if 0
 static void verity_work(struct work_struct *work)
 {
 	struct bio_post_read_ctx *ctx =
@@ -113,7 +112,6 @@ static void verity_work(struct work_struct *work)
 
 	bio_post_read_processing(ctx);
 }
-#endif
 
 static void bio_post_read_processing(struct bio_post_read_ctx *ctx)
 {
@@ -131,7 +129,6 @@ static void bio_post_read_processing(struct bio_post_read_ctx *ctx)
 		}
 		ctx->cur_step++;
 		/* fall-through */
-#if 0
 	case STEP_VERITY:
 		if (ctx->enabled_steps & (1 << STEP_VERITY)) {
 			INIT_WORK(&ctx->work, verity_work);
@@ -140,7 +137,6 @@ static void bio_post_read_processing(struct bio_post_read_ctx *ctx)
 		}
 		ctx->cur_step++;
 		/* fall-through */
-#endif
 	default:
 		__read_end_io(ctx->bio);
 	}
@@ -181,6 +177,7 @@ static void mpage_end_io(struct bio *bio)
 
 	if (bio_post_read_required(bio)) {
 		struct bio_post_read_ctx *ctx = bio->bi_private;
+
 		ctx->cur_step = STEP_INITIAL;
 		bio_post_read_processing(ctx);
 		return;
@@ -188,13 +185,11 @@ static void mpage_end_io(struct bio *bio)
 	__read_end_io(bio);
 }
 
-#if 0
 static inline bool ext4_need_verity(const struct inode *inode, pgoff_t idx)
 {
 	return fsverity_active(inode) &&
 	       idx < DIV_ROUND_UP(inode->i_size, PAGE_SIZE);
 }
-#endif
 
 static struct bio_post_read_ctx *get_bio_post_read_ctx(struct inode *inode,
 						       struct bio *bio,
@@ -206,10 +201,8 @@ static struct bio_post_read_ctx *get_bio_post_read_ctx(struct inode *inode,
 	if (fscrypt_inode_uses_fs_layer_crypto(inode))
 		post_read_steps |= 1 << STEP_DECRYPT;
 
-#if 0
 	if (ext4_need_verity(inode, first_idx))
 		post_read_steps |= 1 << STEP_VERITY;
-#endif
 
 	if (post_read_steps) {
 		ctx = mempool_alloc(bio_post_read_ctx_pool, GFP_NOFS);
@@ -224,11 +217,9 @@ static struct bio_post_read_ctx *get_bio_post_read_ctx(struct inode *inode,
 
 static inline loff_t ext4_readpage_limit(struct inode *inode)
 {
-#if 0
 	if (IS_ENABLED(CONFIG_FS_VERITY) &&
 	    (IS_VERITY(inode) || ext4_verity_in_progress(inode)))
 		return inode->i_sb->s_maxbytes;
-#endif
 
 	return i_size_read(inode);
 }
@@ -381,11 +372,9 @@ int ext4_mpage_readpages(struct address_space *mapping,
 			zero_user_segment(page, first_hole << blkbits,
 					  PAGE_SIZE);
 			if (first_hole == 0) {
-#if 0
 				if (ext4_need_verity(inode, page->index) &&
 				    !fsverity_verify_page(page))
 					goto set_error_page;
-#endif
 				SetPageUptodate(page);
 				unlock_page(page);
 				goto next_page;
