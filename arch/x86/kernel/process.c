@@ -414,8 +414,6 @@ static __always_inline void __speculation_ctrl_update(unsigned long tifp,
 	u64 msr = x86_spec_ctrl_base;
 	bool updmsr = false;
 
-	lockdep_assert_irqs_disabled();
-
 	/* Handle change of TIF_SSBD depending on the mitigation method. */
 	if (static_cpu_has(X86_FEATURE_VIRT_SSBD)) {
 		if (tif_diff & _TIF_SSBD)
