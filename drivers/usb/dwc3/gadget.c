@@ -29,6 +29,7 @@
 
 #include <linux/usb/ch9.h>
 #include <linux/usb/gadget.h>
+#include <linux/usb/pam.h>
 
 #include "debug.h"
 #include "core.h"
@@ -195,8 +196,10 @@ void dwc3_gadget_del_and_unmap_request(struct dwc3_ep *dep,
 	req->trb = NULL;
 	trace_dwc3_gadget_giveback(req);
 
+#if 0
 	if (dep->number > 1)
 		pm_runtime_put(dwc->dev);
+#endif
 }
 
 /**
@@ -282,6 +285,9 @@ int dwc3_send_gadget_ep_cmd(struct dwc3_ep *dep, unsigned cmd,
 	int			cmd_status = 0;
 	int			susphy = false;
 	int			ret = -EINVAL;
+
+	if (pm_runtime_suspended(dwc->dev))
+		return 0;
 
 	/*
 	 * Synopsys Databook 2.60a states, on section 6.3.2.5.[1-8], that if
@@ -601,6 +607,14 @@ static int dwc3_gadget_set_ep_config(struct dwc3 *dwc, struct dwc3_ep *dep,
 		dep->interval = 1 << (desc->bInterval - 1);
 	}
 
+	/* Workaround for SPRD PAMU3 ep intnum mapping */
+	if (dep->endpoint.uether) {
+		if (dep->direction)
+			params.param1 |= DWC3_DEPCFG_INT_NUM(1);
+		else
+			params.param1 |= DWC3_DEPCFG_INT_NUM(2);
+		params.param1 |= DWC3_DEPCFG_XFER_COMPLETE_EN;
+	}
 	return dwc3_send_gadget_ep_cmd(dep, DWC3_DEPCMD_SETEPCONFIG, &params);
 }
 
@@ -681,7 +695,10 @@ static int __dwc3_gadget_ep_enable(struct dwc3_ep *dep,
 	 * Issue StartTransfer here with no-op TRB so we can always rely on No
 	 * Response Update Transfer command.
 	 */
-	if (usb_endpoint_xfer_bulk(desc)) {
+	/* Workaround for SPRD PAMU3 ep intnum mapping */
+	if (dep->endpoint.uether) {
+		usb_phy_post_init(dwc->pam);
+	} else if (usb_endpoint_xfer_bulk(desc)) {
 		struct dwc3_gadget_ep_cmd_params params;
 		struct dwc3_trb	*trb;
 		dma_addr_t trb_dma;
@@ -819,6 +836,7 @@ static int dwc3_gadget_ep_enable(struct usb_ep *ep,
 	ret = __dwc3_gadget_ep_enable(dep, false, false);
 	spin_unlock_irqrestore(&dwc->lock, flags);
 
+
 	return ret;
 }
 
@@ -836,6 +854,10 @@ static int dwc3_gadget_ep_disable(struct usb_ep *ep)
 
 	dep = to_dwc3_ep(ep);
 	dwc = dep->dwc;
+
+	/* Workaround for SPRD PAMU3 ep intnum mapping */
+	if (ep->uether)
+		usb_phy_set_suspend(dwc->pam, 1);
 
 	if (dev_WARN_ONCE(dwc->dev, !(dep->flags & DWC3_EP_ENABLED),
 					"%s is already disabled\n",
@@ -1314,8 +1336,6 @@ static int __dwc3_gadget_ep_queue(struct dwc3_ep *dep, struct dwc3_request *req)
 	if (WARN(req->dep != dep, "request %pK belongs to '%s'\n",
 				&req->request, req->dep->name))
 		return -EINVAL;
-
-	pm_runtime_get(dwc->dev);
 
 	req->request.actual	= 0;
 	req->request.status	= -EINPROGRESS;
@@ -1861,6 +1881,39 @@ static void dwc3_gadget_setup_nump(struct dwc3 *dwc)
 	dwc3_writel(dwc->regs, DWC3_DCFG, reg);
 }
 
+static int __dwc3_gadget_reset(struct dwc3 *dwc)
+{
+	struct dwc3_ep		*dep;
+	int			ret;
+
+	__dwc3_gadget_ep_disable(dwc->eps[0]);
+	__dwc3_gadget_ep_disable(dwc->eps[1]);
+
+	dep = dwc->eps[0];
+	ret = __dwc3_gadget_ep_enable(dep, false, false);
+	if (ret) {
+		dev_err(dwc->dev, "failed to enable %s\n", dep->name);
+		return ret;
+	}
+
+	dep = dwc->eps[1];
+	ret = __dwc3_gadget_ep_enable(dep, false, false);
+	if (ret) {
+		dev_err(dwc->dev, "failed to enable %s\n", dep->name);
+		goto error;
+	}
+
+	/* begin to receive SETUP packets */
+	dwc->ep0state = EP0_SETUP_PHASE;
+	dwc3_ep0_out_start(dwc);
+
+	return 0;
+
+error:
+	__dwc3_gadget_ep_disable(dwc->eps[0]);
+	return ret;
+}
+
 static int __dwc3_gadget_start(struct dwc3 *dwc)
 {
 	struct dwc3_ep		*dep;
@@ -1969,6 +2022,13 @@ err0:
 
 static void __dwc3_gadget_stop(struct dwc3 *dwc)
 {
+	/*
+	 * The dwc3 device maybe enter suspend mode before UDC try to stop
+	 * gadget. So if the dwc3 device has been in suspend state, just return.
+	 */
+	if (pm_runtime_suspended(dwc->dev))
+		return;
+
 	dwc3_gadget_disable_irq(dwc);
 	__dwc3_gadget_ep_disable(dwc->eps[0]);
 	__dwc3_gadget_ep_disable(dwc->eps[1]);
@@ -1984,7 +2044,8 @@ static int dwc3_gadget_stop(struct usb_gadget *g)
 
 	if (pm_runtime_suspended(dwc->dev))
 		goto out;
-
+	dwc->eps[0]->trb_enqueue = 0;
+	dwc->eps[1]->trb_enqueue = 0;
 	__dwc3_gadget_stop(dwc);
 
 	for (epnum = 2; epnum < DWC3_ENDPOINTS_NUM; epnum++) {
@@ -2018,6 +2079,16 @@ static void dwc3_gadget_set_speed(struct usb_gadget *g,
 	u32			reg;
 
 	spin_lock_irqsave(&dwc->lock, flags);
+
+	/*
+	 * If the gadget has been in suspend state, then don't
+	 * need to set gadget speed, just return.
+	 */
+	if (pm_runtime_suspended(dwc->dev)) {
+		spin_unlock_irqrestore(&dwc->lock, flags);
+		return;
+	}
+
 	reg = dwc3_readl(dwc->regs, DWC3_DCFG);
 	reg &= ~(DWC3_DCFG_SPEED_MASK);
 
@@ -2558,6 +2629,9 @@ static void dwc3_reset_gadget(struct dwc3 *dwc)
 {
 	if (!dwc->gadget_driver)
 		return;
+	dwc->eps[0]->trb_enqueue = 0;
+	dwc->eps[1]->trb_enqueue = 0;
+	__dwc3_gadget_reset(dwc);
 
 	if (dwc->gadget.speed != USB_SPEED_UNKNOWN) {
 		spin_unlock(&dwc->lock);

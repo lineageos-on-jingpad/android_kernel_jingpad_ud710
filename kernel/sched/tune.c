@@ -35,6 +35,11 @@ struct schedtune {
 	/* Hint to bias scheduling of tasks on that SchedTune CGroup
 	 * towards idle CPUs */
 	int prefer_idle;
+
+#ifdef CONFIG_SCHED_WALT
+	int account_wait_time;
+	int init_task_load_pct;
+#endif
 };
 
 static inline struct schedtune *css_st(struct cgroup_subsys_state *css)
@@ -65,6 +70,10 @@ static struct schedtune
 root_schedtune = {
 	.boost	= 0,
 	.prefer_idle = 0,
+#ifdef CONFIG_SCHED_WALT
+	.account_wait_time = 0,
+	.init_task_load_pct = 0,
+#endif
 };
 
 /*
@@ -155,10 +164,6 @@ schedtune_cpu_update(int cpu, u64 now)
 		boost_max = bg->group[idx].boost;
 		boost_ts =  bg->group[idx].ts;
 	}
-	/* Ensures boost_max is non-negative when all cgroup boost values
-	 * are neagtive. Avoids under-accounting of cpu capacity which may cause
-	 * task stacking and frequency spikes.*/
-	boost_max = max(boost_max, 0);
 	bg->boost_max = boost_max;
 	bg->boost_ts = boost_ts;
 }
@@ -442,6 +447,42 @@ int schedtune_prefer_idle(struct task_struct *p)
 	return prefer_idle;
 }
 
+#ifdef CONFIG_SCHED_WALT
+int schedtune_account_wait_time(struct task_struct *p)
+{
+	struct schedtune *st;
+	int account_wait_time;
+
+	if (!unlikely(schedtune_initialized))
+		return 0;
+
+	/* Get account_wait_time value */
+	rcu_read_lock();
+	st = task_schedtune(p);
+	account_wait_time = st->account_wait_time;
+	rcu_read_unlock();
+
+	return account_wait_time;
+}
+
+int schedtune_init_task_load_pct(struct task_struct *p)
+{
+	struct schedtune *st;
+	int init_task_load_pct;
+
+	if (!unlikely(schedtune_initialized))
+		return 0;
+
+	/* Get init_task_load_pct value */
+	rcu_read_lock();
+	st = task_schedtune(p);
+	init_task_load_pct = st->init_task_load_pct;
+	rcu_read_unlock();
+
+	return init_task_load_pct;
+}
+#endif
+
 static u64
 prefer_idle_read(struct cgroup_subsys_state *css, struct cftype *cft)
 {
@@ -474,7 +515,7 @@ boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
 {
 	struct schedtune *st = css_st(css);
 
-	if (boost < 0 || boost > 100)
+	if (boost < -100 || boost > 100)
 		return -EINVAL;
 
 	st->boost = boost;
@@ -484,6 +525,46 @@ boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
 
 	return 0;
 }
+
+#ifdef CONFIG_SCHED_WALT
+static u64
+account_wait_time_read(struct cgroup_subsys_state *css, struct cftype *cft)
+{
+	struct schedtune *st = css_st(css);
+
+	return st->account_wait_time;
+}
+
+static int
+account_wait_time_write(struct cgroup_subsys_state *css, struct cftype *cft,
+			u64 account_wait_time)
+{
+	struct schedtune *st = css_st(css);
+
+	st->account_wait_time = account_wait_time;
+
+	return 0;
+}
+
+static u64
+init_task_load_pct_read(struct cgroup_subsys_state *css, struct cftype *cft)
+{
+	struct schedtune *st = css_st(css);
+
+	return st->init_task_load_pct;
+}
+
+static int
+init_task_load_pct_write(struct cgroup_subsys_state *css, struct cftype *cft,
+			u64 init_task_load_pct)
+{
+	struct schedtune *st = css_st(css);
+
+	st->init_task_load_pct = init_task_load_pct;
+
+	return 0;
+}
+#endif
 
 static struct cftype files[] = {
 	{
@@ -496,6 +577,18 @@ static struct cftype files[] = {
 		.read_u64 = prefer_idle_read,
 		.write_u64 = prefer_idle_write,
 	},
+#ifdef CONFIG_SCHED_WALT
+	{
+		.name = "account_wait_time",
+		.read_u64 = account_wait_time_read,
+		.write_u64 = account_wait_time_write,
+	},
+	{
+		.name = "init_task_load_pct",
+		.read_u64 = init_task_load_pct_read,
+		.write_u64 = init_task_load_pct_write,
+	},
+#endif
 	{ }	/* terminate */
 };
 

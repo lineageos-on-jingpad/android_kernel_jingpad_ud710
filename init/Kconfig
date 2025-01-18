@@ -54,6 +54,13 @@ config INIT_ENV_ARG_LIMIT
 	  Maximum of each of the number of arguments and environment
 	  variables passed to init from the kernel command line.
 
+config COMPILE_TOOL
+	string "choose toolchain for compiling"
+	default "gcc"
+	help
+	  This config now is used to provide compile toolchain information for script "aiaiai_info.py".
+	  The value of it has to be one of "gcc/clang/all". When you choose "all", it means "gcc"
+	  and "clang" are both chosen.
 
 config CROSS_COMPILE
 	string "Cross-compiler tool prefix"
@@ -545,6 +552,15 @@ config IKCONFIG_PROC
 	---help---
 	  This option enables access to the kernel configuration file
 	  through /proc/config.gz.
+
+config IKHEADERS
+	tristate "Enable kernel headers through /sys/kernel/kheaders.tar.xz"
+	depends on SYSFS
+	help
+	  This option enables access to the in-kernel headers that are generated during
+	  the build process. These can be used to build eBPF tracing programs,
+	  or similar programs.  If you build the headers as a module, a module called
+	  kheaders.ko is built which can be loaded on-demand to get access to headers.
 
 config LOG_BUF_SHIFT
 	int "Kernel log buffer size (16 => 64KB, 17 => 128KB)"
@@ -1074,6 +1090,18 @@ config DEFAULT_USE_ENERGY_AWARE
 	  via sysctl.
 
 	  Say N if unsure.
+
+config SPRD_CORE_CTL
+	bool "Sprd cpu core controller"
+	depends on SMP
+	default n
+	help
+	This option enables cpu isolation, which implement an interface to
+	userspace to isolate cpu dynamically, the isolated cpu will be
+	unavailable to scheduler and load balancer, and all its non-pinned
+	timers, IRQs and tasks will be migrated to other cpus, only pinned
+	kthread and IRQS are still allowed to run, this achieve similar
+	effect as hotplug but at lower latency cost.
 
 config SYSFS_DEPRECATED
 	bool "Enable deprecated sysfs features to support old userspace tools"

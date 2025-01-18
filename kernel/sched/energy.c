@@ -29,6 +29,7 @@
 #include <linux/cpu.h>
 #include <linux/pm_opp.h>
 #include <linux/platform_device.h>
+#include <linux/soc/sprd/hwfeature.h>
 
 #include "sched.h"
 
@@ -76,6 +77,13 @@ void init_sched_energy_costs(void)
 	const struct property *prop;
 	int sd_level, i, nstates, cpu;
 	const __be32 *val;
+	unsigned long min_cap = ULONG_MAX;
+	unsigned long capacity;
+	struct cpumask mc_cpu_mask;
+	char chip_type[64];
+
+	sprd_kproperty_get("lwfq/type", chip_type, "-1");
+	cpumask_clear(&mc_cpu_mask);
 
 	for_each_possible_cpu(cpu) {
 		cn = of_get_cpu_node(cpu, NULL);
@@ -97,7 +105,13 @@ void init_sched_energy_costs(void)
 			if (!cp)
 				break;
 
-			prop = of_find_property(cp, "busy-cost-data", NULL);
+			if (!strncmp(chip_type, "0", strlen("0"))) //T618
+				prop = of_find_property(cp, "busy-cost-data-hp", NULL);
+			else if (!strncmp(chip_type, "1", strlen("1"))) //T610
+				prop = of_find_property(cp, "busy-cost-data-lp", NULL);
+			else
+				prop = of_find_property(cp, "busy-cost-data", NULL);
+
 			if (!prop || !prop->value) {
 				pr_warn("No busy-cost data, skipping sched_energy init\n");
 				goto out;
@@ -130,7 +144,13 @@ void init_sched_energy_costs(void)
 			sge->nr_cap_states = nstates;
 			sge->cap_states = cap_states;
 
-			prop = of_find_property(cp, "idle-cost-data", NULL);
+			if (!strncmp(chip_type, "0", strlen("0"))) //T618
+				prop = of_find_property(cp, "idle-cost-data-hp", NULL);
+			else if (!strncmp(chip_type, "1", strlen("1"))) //T610
+				prop = of_find_property(cp, "idle-cost-data-lp", NULL);
+			else
+				prop = of_find_property(cp, "idle-cost-data", NULL);
+
 			if (!prop || !prop->value) {
 				pr_warn("No idle-cost data, skipping sched_energy init\n");
 				goto out;
@@ -151,9 +171,28 @@ void init_sched_energy_costs(void)
 		}
 		if (!freq_energy_model)
 			check_max_cap_vs_cpu_scale(cpu, sge_array[cpu][SD_LEVEL0]);
+
+		/* find min_cap cpu masks */
+		sge = sge_array[cpu][SD_LEVEL0];
+		if (!sge)
+			continue;
+
+		capacity = sge->cap_states[sge->nr_cap_states - 1].cap;
+		if (capacity < min_cap) {
+			cpumask_clear(&mc_cpu_mask);
+			min_cap = capacity;
+		}
+
+		if (capacity == min_cap)
+			cpumask_set_cpu(cpu, &mc_cpu_mask);
 	}
+
+	if (cpumask_weight(&mc_cpu_mask))
+		cpumask_copy(&min_cap_cpu_mask, &mc_cpu_mask);
+
 	sge_ready = true;
-	pr_info("Sched-energy-costs installed from DT\n");
+	pr_info("Sched-energy-costs installed from DT, min_cap_cpu_mask: %*pbl\n",
+		cpumask_pr_args(&min_cap_cpu_mask));
 	return;
 
 out:
@@ -200,6 +239,8 @@ static int sched_energy_probe(struct platform_device *pdev)
 
 		opp = dev_pm_opp_find_freq_floor(cpu_dev,
 						 &max_frequencies[cpu]);
+		dev_pm_opp_put(opp);
+
 		if (IS_ERR_OR_NULL(opp)) {
 			if (!opp || PTR_ERR(opp) == -ENODEV)
 				ret = -EPROBE_DEFER;

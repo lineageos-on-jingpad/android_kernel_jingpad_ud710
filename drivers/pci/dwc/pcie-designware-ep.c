@@ -30,6 +30,13 @@ void dw_pcie_ep_linkup(struct dw_pcie_ep *ep)
 	pci_epc_linkup(epc);
 }
 
+void dw_pcie_ep_unlink(struct dw_pcie_ep *ep)
+{
+	struct pci_epc *epc = ep->epc;
+
+	pci_epc_unlink(epc);
+}
+
 static void dw_pcie_ep_reset_bar(struct dw_pcie *pci, enum pci_barno bar)
 {
 	u32 reg;
@@ -276,11 +283,60 @@ static const struct pci_epc_ops epc_ops = {
 	.stop			= dw_pcie_ep_stop,
 };
 
+int dw_pcie_ep_raise_msi_irq(struct dw_pcie_ep *ep,
+			     u8 interrupt_num)
+{
+	struct dw_pcie *pci = to_dw_pcie_from_ep(ep);
+	struct pci_epc *epc = ep->epc;
+	u16 msg_ctrl, msg_data;
+	u32 msg_addr_lower, msg_addr_upper;
+	u64 msg_addr;
+	bool has_upper;
+	int ret;
+
+	/* Raise MSI per the PCI Local Bus Specification Revision 3.0, 6.8.1. */
+	msg_ctrl = dw_pcie_readw_dbi(pci, MSI_MESSAGE_CONTROL);
+	has_upper = !!(msg_ctrl & PCI_MSI_FLAGS_64BIT);
+	msg_addr_lower = dw_pcie_readl_dbi(pci, MSI_MESSAGE_ADDR_L32);
+	if (has_upper) {
+		msg_addr_upper = dw_pcie_readl_dbi(pci, MSI_MESSAGE_ADDR_U32);
+		msg_data = dw_pcie_readw_dbi(pci, MSI_MESSAGE_DATA_64);
+	} else {
+		msg_addr_upper = 0;
+		msg_data = dw_pcie_readw_dbi(pci, MSI_MESSAGE_DATA_32);
+	}
+	msg_addr = ((u64) msg_addr_upper) << 32 | msg_addr_lower;
+	ret = dw_pcie_ep_map_addr(epc, ep->msi_mem_phys, msg_addr,
+				  epc->mem->page_size);
+	if (ret)
+		return ret;
+
+	writel(msg_data | (interrupt_num - 1), ep->msi_mem);
+
+	dw_pcie_ep_unmap_addr(epc, ep->msi_mem_phys);
+
+	return 0;
+}
+
 void dw_pcie_ep_exit(struct dw_pcie_ep *ep)
 {
 	struct pci_epc *epc = ep->epc;
 
+	pci_epc_mem_free_addr(epc, ep->msi_mem_phys, ep->msi_mem,
+			      epc->mem->page_size);
+
 	pci_epc_mem_exit(epc);
+}
+
+static u8 dw_pcie_iatu_unroll_enabled(struct dw_pcie *pci)
+{
+	u32 val;
+
+	val = dw_pcie_readl_dbi(pci, PCIE_ATU_VIEWPORT);
+	if (val == 0xffffffff)
+		return 1;
+
+	return 0;
 }
 
 int dw_pcie_ep_init(struct dw_pcie_ep *ep)
@@ -333,6 +389,17 @@ int dw_pcie_ep_init(struct dw_pcie_ep *ep)
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize address space\n");
 		return ret;
+	}
+
+	pci->iatu_unroll_enabled = dw_pcie_iatu_unroll_enabled(pci);
+	dev_dbg(pci->dev, "iATU unroll: %s\n",
+			pci->iatu_unroll_enabled ? "enabled" : "disabled");
+
+	ep->msi_mem = pci_epc_mem_alloc_addr(epc, &ep->msi_mem_phys,
+					     epc->mem->page_size);
+	if (!ep->msi_mem) {
+		dev_err(dev, "Failed to reserve memory for MSI\n");
+		return -ENOMEM;
 	}
 
 	ep->epc = epc;

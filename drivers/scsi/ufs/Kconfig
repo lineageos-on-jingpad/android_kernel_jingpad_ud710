@@ -38,6 +38,7 @@ config SCSI_UFSHCD
 	select PM_DEVFREQ
 	select DEVFREQ_GOV_SIMPLE_ONDEMAND
 	select NLS
+	select RPMB
 	---help---
 	This selects the support for UFS devices in Linux, say Y and make
 	  sure that you know the name of your UFS host adapter (the card
@@ -100,3 +101,16 @@ config SCSI_UFS_QCOM
 
 	  Select this if you have UFS controller on QCOM chipset.
 	  If unsure, say N.
+
+config SCSI_UFS_SPRD
+	tristate "SPRD specific hooks to UFS controller platform driver"
+	depends on SCSI_UFSHCD_PLATFORM
+	help
+	  This selects the SPRD specific additions to UFSHCD platform driver.
+	  UFS host on SPRD needs some vendor specific configuration before
+	  accessing the hardware which includes PHY configuration and vendor
+	  specific registers.
+
+	  Select this if you have UFS controller on SPRD chipset.
+	  If unsure, say N.
+
