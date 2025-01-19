@@ -181,8 +181,10 @@ static int sprd_panel_send_cmds(struct mipi_dsi_device *dsi,
 static int sprd_panel_unprepare(struct drm_panel *p)
 {
     struct sprd_panel *panel = to_sprd_panel(p);
+#if defined(CONFIG_GOWIN_FPGA) || defined(CONFIG_LATTICE_FPGA)
     struct gpio_timing *timing;
     int items, i;
+#endif
 
     DRM_INFO("%s()\n", __func__);
 
@@ -857,7 +859,9 @@ static int sprd_oled_set_brightness(struct backlight_device *bdev)
 	int level, brightness;
 	struct sprd_oled *oled = bl_get_data(bdev);
 	struct sprd_panel *panel = oled->panel;
+#if defined(CONFIG_GOWIN_FPGA) || defined(CONFIG_LATTICE_FPGA)
     int i;
+#endif
 
 	mutex_lock(&panel_lock);
 	if (!panel->is_enabled) {
