@@ -1,6 +1,6 @@
 config SPRD_USER
-	bool "Sprdtrum lookat tool support"
-	depends on SPRD_USER
+	tristate "Sprdtrum lookat tool support"
+	depends on ARCH_SPRD
 	default n
 	help
 	  this macro is for lookat driver, lookat is a debug tool that is used to
