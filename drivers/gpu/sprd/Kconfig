@@ -1,0 +1,19 @@
+menuconfig SPRD_GPU_SUPPORT
+    tristate "SPRD GPU Driver Support"
+    default n
+    help
+      Enable support for the SPRD GPU driver. This driver provides support
+      for GPUs in Spreadtrum platforms. It is required for 2D/3D rendering
+      and acceleration on compatible devices.
+
+if SPRD_GPU_SUPPORT
+
+config SPRD_GPU_POWERVR
+    tristate "PowerVR GPU Driver Support"
+    default n
+    help
+      Enable support for PowerVR GPUs on SPRD platforms.
+
+      This option enables drivers for Mali architectures.
+
+endif # SPRD_GPU_SUPPORT
