@@ -1249,4 +1249,8 @@ config TOUCHSCREEN_ROHM_BU21023
 	  To compile this driver as a module, choose M here: the
 	  module will be called bu21023_ts.
 
+source "drivers/input/touchscreen/elan_ts/Kconfig"
+
+source "drivers/input/touchscreen/goodix_ts/Kconfig"
+
 endif

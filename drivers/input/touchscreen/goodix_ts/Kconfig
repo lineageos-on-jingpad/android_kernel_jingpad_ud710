@@ -1,0 +1,12 @@
+#
+# Goodix touchscreen driver configuration
+#
+config TOUCHSCREEN_GOODIX_GT738X
+	tristate "Goodix GT738x touchscreen"
+	depends on I2C
+	default y
+	help
+	  Say Y here if you have a Goodix GT738x touch controller
+	  to your system.
+
+	  If unsure, say N.

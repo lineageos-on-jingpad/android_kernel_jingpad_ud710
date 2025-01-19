@@ -1,0 +1,8 @@
+#
+# Goodix Fingerprint driver configuration
+#
+
+config GOODIX_FP
+	tristate "Goodix Fingerprint driver support"
+	help
+	  This supports Goodix Fingerprint drivers.
