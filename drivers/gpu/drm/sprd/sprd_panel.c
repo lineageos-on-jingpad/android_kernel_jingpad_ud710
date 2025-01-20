@@ -1262,8 +1262,9 @@ static int sprd_panel_probe(struct mipi_dsi_device *slave)
     }
     regulator_set_voltage(lcd3v3, 3300000, 3300000);
     ret = regulator_enable(lcd3v3);
-    if(ret != 0)
+    if (ret != 0) {
         printk("lcd %s: some error happen, fail to enable regulator!\n", __func__);
+    }
    
 	panel = devm_kzalloc(&slave->dev, sizeof(*panel), GFP_KERNEL);
 	if (!panel)
