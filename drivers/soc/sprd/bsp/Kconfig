@@ -1,3 +1,27 @@
+config BSP_BOARD_CAMERA_MODULE_CPP_VERSION
+    string "Support SPRD Board CPP Version"
+    default ""
+
+config BSP_BOARD_CAMERA_MODULE_CSI_VERSION
+    string "Support SPRD Board CSI Version"
+    default ""
+
+config BSP_BOARD_CAMERA_MODULE_DVFS
+    string "Support SPRD Board DVFS Board"
+    default ""
+
+config BSP_BOARD_CAMERA_MODULE_FD_VERSION
+    string "Support SPRD Board FD Version"
+    default ""
+
+config BSP_BOARD_CAMERA_MODULE_ISP_VERSION
+    string "Support SPRD Board ISP Version"
+    default ""
+
+config BSP_BOARD_CAMERA_MODULE_ISP_ADAPT_VERSION
+    string "Support SPRD Board ISP Adapt Version"
+    default ""
+
 config BSP_BOARD_CAMERA_MODULE_VDSP_DEVICE
     string "Support SPRD Board VDSP Device"
     default ""

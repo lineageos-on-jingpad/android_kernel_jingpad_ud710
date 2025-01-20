@@ -1,0 +1,43 @@
+menuconfig SPRD_CAMERA_SUPPORT
+	tristate "Support SPRD Camera Driver"
+
+if SPRD_CAMERA_SUPPORT
+
+config SPRD_CAMERA_CORE
+	tristate "Support SPRD Camera Core Driver"
+    depends on SPRD_CAMERA_FLASH_DRV && SPRD_CAMERA_SENSOR
+
+config SPRD_CAMERA_CPP
+	tristate "Support SPRD Camera CPP Driver"
+
+config SPRD_CAMERA_FD
+	tristate "Support SPRD Camera FD Driver"
+    depends on SPRD_CAMERA_CORE
+
+config SPRD_CAMERA_FLASH
+	tristate "Support SPRD Camera Flash Sensor Driver"
+
+config SPRD_CAMERA_FLASH_DRV
+	tristate "Support SPRD Camera Flash DRV Driver"
+    depends on SPRD_CAMERA_FLASH
+
+config SPRD_CAMERA_FLASH_SENSOR_IC
+	tristate "Support SPRD Camera Flash Sensor IC Driver"
+    depends on SPRD_CAMERA_FLASH_DRV
+
+config SPRD_CAMERA_FLASH_SENSOR_IC_NAME
+	string "SPRD Camera Flash Sensor IC Name"
+	default ""
+	depends on SPRD_CAMERA_FLASH_SENSOR_IC
+
+config SPRD_CAMERA_MMDVFS
+	tristate "Support SPRD Camera MMDVFS Driver"
+
+config SPRD_CAMERA_SENSOR
+	tristate "Support SPRD Camera Sensor Driver"
+
+config SPRD_CAMERA_VDSP
+	tristate "Support SPRD Camera VDSP Driver"
+	depends on !SPRD_NPU_VDSP
+
+endif # SPRD_CAMERA_SUPPORT
