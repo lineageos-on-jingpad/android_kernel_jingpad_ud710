@@ -8,6 +8,7 @@ BSP_BOARD_CAMERA_MODULE_VDSP_DEVICE = $(subst ",,$(CONFIG_BSP_BOARD_CAMERA_MODUL
 VDSP_DIR := $(BSP_BOARD_CAMERA_MODULE_VDSP_DEVICE)
 $(info BSP_BOARD_CAMERA_MODULE_VDSP_DEVICE = $(BSP_BOARD_CAMERA_MODULE_VDSP_DEVICE))
 
+ccflags-y += -DCONFIG_VBOOT_V2
 ccflags-y += -DDEBUG
 ccflags-y += -DKERNEL_VERSION_414
 ccflags-y += -I$(srctree)/drivers/soc/sprd/npu/vdsp/../interface
