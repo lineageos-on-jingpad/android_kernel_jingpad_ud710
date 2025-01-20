@@ -1432,7 +1432,7 @@ static int sprd_iommu_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	pdata->id = (int)((enum IOMMU_ID)
+	pdata->id = (int)((enum IOMMU_ID)(long)
 		((of_match_node(sprd_iommu_ids, np))->data));
 
 	switch (pdata->id) {
