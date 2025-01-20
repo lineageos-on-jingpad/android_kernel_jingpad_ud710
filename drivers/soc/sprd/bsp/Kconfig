@@ -1,0 +1,3 @@
+config BSP_BOARD_CAMERA_MODULE_VDSP_DEVICE
+    string "Support SPRD Board VDSP Device"
+    default ""

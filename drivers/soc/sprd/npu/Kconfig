@@ -1,0 +1,15 @@
+menuconfig SPRD_NPU_SUPPORT
+    tristate "SPRD NPU Support"
+    default n
+
+if SPRD_NPU_SUPPORT
+
+config SPRD_NPU_IMG
+    tristate "IMG NPU Driver Support"
+    default n
+
+config SPRD_NPU_VDSP
+    tristate "VDSP NPU Driver Support"
+    default n
+
+endif # SPRD_NPU_SUPPORT

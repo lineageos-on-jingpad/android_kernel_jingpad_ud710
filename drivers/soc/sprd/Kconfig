@@ -66,3 +66,6 @@ source "drivers/soc/sprd/debug/Kconfig"
 source "drivers/soc/sprd/user/Kconfig"
 source "drivers/soc/sprd/performance/Kconfig"
 source "drivers/soc/sprd/pub/Kconfig"
+
+source "drivers/soc/sprd/bsp/Kconfig"
+source "drivers/soc/sprd/npu/Kconfig"
