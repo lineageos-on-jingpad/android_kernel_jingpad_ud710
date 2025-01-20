@@ -17,3 +17,4 @@ obj-y				+= autotest/
 obj-$(CONFIG_SPRD_HWFEATURE)	+= sprd_hwfeature.o
 obj-$(CONFIG_SPRD_PIKE2_SLEEP)  += sprd_pike2_sleep.o
 obj-$(CONFIG_SPRD_NPU_SUPPORT)  += npu/
+obj-$(CONFIG_SPRD_WCN_SUPPORT)  += wcn/

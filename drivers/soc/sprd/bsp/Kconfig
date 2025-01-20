@@ -1,3 +1,15 @@
 config BSP_BOARD_CAMERA_MODULE_VDSP_DEVICE
     string "Support SPRD Board VDSP Device"
     default ""
+
+config BSP_BOARD_UNISOC_WCN_SOCKET
+    string "Support SPRD Board Unisoc WCN Socket"
+    default ""
+
+config BSP_BOARD_WLAN_DEVICE
+    string "Support SPRD Board Wlan Device"
+    default ""
+
+config BSP_BUILD_VARIANT
+    string "SPRD BSP Build Variant"
+    default ""

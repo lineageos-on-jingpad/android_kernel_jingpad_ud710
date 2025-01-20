@@ -69,3 +69,4 @@ source "drivers/soc/sprd/pub/Kconfig"
 
 source "drivers/soc/sprd/bsp/Kconfig"
 source "drivers/soc/sprd/npu/Kconfig"
+source "drivers/soc/sprd/wcn/Kconfig"

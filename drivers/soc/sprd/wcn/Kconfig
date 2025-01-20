@@ -1,0 +1,19 @@
+menuconfig SPRD_WCN_SUPPORT
+    tristate "SPRD WCN Support"
+    default n
+
+if SPRD_WCN_SUPPORT
+
+config SPRD_WCN_BLUETOOTH
+    tristate "SPRD WCN Bluetooth Driver Support"
+    default n
+
+config SPRD_WCN_FM
+    tristate "SPRD WCN FM Driver Support"
+    default n
+
+config SPRD_WCN_WLAN
+    tristate "SPRD WCN WLAN Driver Support"
+    default n
+
+endif # SPRD_WCN_SUPPORT
