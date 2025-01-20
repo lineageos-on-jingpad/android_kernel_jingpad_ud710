@@ -1100,7 +1100,7 @@ static int aw87xxx_update_cfg_name(struct aw87xxx *aw87xxx)
 	head_index = sizeof(aw87xxx_head) - 1;
 
 	/*add product information */
-	snprintf(buf, sizeof(buf) + 1, "%02x", aw87xxx->chipid);
+	snprintf(buf, sizeof(buf), "%02x", aw87xxx->chipid);
 
 	for (i = 0; i < sizeof(aw87xxx->cfg_name) / AW87XXX_CFG_NAME_MAX; i++)
 		memcpy(aw87xxx->cfg_name[i] + head_index, buf, sizeof(buf) - 1);
