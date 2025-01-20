@@ -477,8 +477,9 @@ static int sprd_hall_register(void)
 {
     int error;
     hall_dev = input_allocate_device();
-    if(!hall_dev)
+    if(!hall_dev) {
         return -ENOMEM;
+    }
 
 	hall_dev->name = "Sprd Hall";
 	hall_dev->phys = "sprdhall/input0";
