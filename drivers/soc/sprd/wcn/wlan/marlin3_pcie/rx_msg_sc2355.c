@@ -411,7 +411,7 @@ int sprdwl_pkt_log_save(struct sprdwl_intf *intf, void *data)
 	/*for pkt log space key and enter key*/
 	char temp_space, temp_enter;
 	/*for pkt log txt line number and write pkt log into file*/
-	char temphdr[6], tempdata[2];
+	char temphdr[6], tempdata[3];
 
 	intf->pfile = filp_open(
 					"storage/sdcard0/Download/sprdwl_pkt_log.txt",
