@@ -659,8 +659,9 @@ static int et200_spi_probe(struct spi_device *spi)
         printk(" DT:mydevdata->gpio_rb value is not valid\n");
 
     newgpio_wakeup = of_get_named_gpio(dt, "et200,wakeup-gpio", 0);
-    if (!gpio_is_valid(newgpio_wakeup))
+    if (!gpio_is_valid(newgpio_wakeup)) {
         printk(" DT:mydevdata->newgpio_wakeup value is not valid\n");
+	}
 	ret = gpio_get_value(newgpio_rb);
 	printk("et200 gpio_rb after set  rb pin = %d \n", ret);
 	
