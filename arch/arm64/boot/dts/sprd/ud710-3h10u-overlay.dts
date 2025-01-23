@@ -111,10 +111,10 @@
 };
 
 &spi1 {
-	status = "okay";
+	status = "disabled";
 
-	spi_md6000@0 {
-        	status = "okay";
+   	spi_md6000@0 {
+        	status = "disabled";
         	reg = <0>;
         	compatible = "md6000,spi";
             md6000rst-gpio = <&ap_gpio 137 0>;

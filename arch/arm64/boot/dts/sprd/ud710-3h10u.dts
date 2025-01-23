@@ -17,7 +17,7 @@
 #include "sprd-sound-fe-be.dtsi"
 #include "lcd/lcd_dummy_mipi.dtsi"
 
-#include "lcd/lcd_rm69380_lattice_fpga_mipi.dtsi"
+#include "lcd/lcd_rm69380_fpga_mipi.dtsi"
 
 / {
 	model = "Spreadtrum UD710 3h10u Board";
@@ -470,13 +470,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0>;
-		sprd,surface-width = <1512>;
-		sprd,surface-height = <2072>;
+		sprd,surface-width = <1296>;
+		sprd,surface-height = <1776>;
 		reset-gpio = <&ap_gpio 50 GPIO_ACTIVE_HIGH>;
 		lcd1v8-gpio = <&ap_gpio 60 GPIO_ACTIVE_HIGH>;
 		fpga1v8-gpio = <&ap_gpio 72 GPIO_ACTIVE_HIGH>;
 		fpga1v2-gpio = <&ap_gpio 73 GPIO_ACTIVE_HIGH>;
-		//fpgarst-gpio = <&ap_gpio 137 GPIO_ACTIVE_HIGH>;
+		fpgarst-gpio = <&ap_gpio 137 GPIO_ACTIVE_HIGH>;
 		power-supply = <&lcd_vdd>;
 		port {
 			reg = <1>;
