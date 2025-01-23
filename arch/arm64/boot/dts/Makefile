@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
+dtstree		:= $(srctree)/$(src)
+ifeq "$(wildcard $(dtstree)/sprd/Makefile)" ""
 dts-dirs += actions
 dts-dirs += al
 dts-dirs += allwinner
@@ -20,14 +22,14 @@ dts-dirs += realtek
 dts-dirs += renesas
 dts-dirs += rockchip
 dts-dirs += socionext
-dts-dirs += sprd
 dts-dirs += xilinx
 dts-dirs += lg
 dts-dirs += zte
+else
+dts-dirs += sprd
+endif
 
 subdir-y	:= $(dts-dirs)
-
-dtstree		:= $(srctree)/$(src)
 
 dtb-$(CONFIG_OF_ALL_DTBS) := $(patsubst $(dtstree)/%.dts,%.dtb, $(foreach d,$(dts-dirs), $(wildcard $(dtstree)/$(d)/*.dts)))
 
