@@ -20,7 +20,7 @@
 
 			vbmeta {
 				compatible = "android,vbmeta";
-				parts = "socko,odmko,dtbo,vbmeta,boot,recovery,l_pmsys,l_agdsp,system,vendor,product";
+				parts = "socko,odmko,dtbo,vbmeta,boot,recovery,l_pmsys,l_agdsp";
 			};
 		};
 	};
