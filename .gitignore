@@ -125,3 +125,6 @@ all.config
 
 # fetched Android config fragments
 kernel/configs/android-*.cfg
+
+# Touchpanel firmware
+!drivers/input/touchscreen/elan_ts/fw_data.i
